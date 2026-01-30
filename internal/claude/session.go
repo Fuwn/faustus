@@ -516,3 +516,342 @@ func writeIndex(indexPath string, sessionIndex *SessionIndex) error {
 
 	return os.WriteFile(indexPath, jsonData, 0o644)
 }
+
+func ReassignSessionPath(session *Session, newPath string) error {
+	oldProjectDirectory := ProjectDir(session)
+	newDirectoryName := pathToDirectoryName(newPath)
+
+	var newProjectDirectory string
+
+	if session.InTrash {
+		newProjectDirectory = filepath.Join(TrashDir(), newDirectoryName)
+	} else {
+		newProjectDirectory = filepath.Join(ProjectsDir(), newDirectoryName)
+	}
+
+	if oldProjectDirectory == newProjectDirectory {
+		return nil
+	}
+
+	if mkdirError := os.MkdirAll(newProjectDirectory, 0o755); mkdirError != nil {
+		return mkdirError
+	}
+
+	oldJsonlPath := session.FullPath
+	newJsonlPath := filepath.Join(newProjectDirectory, filepath.Base(oldJsonlPath))
+
+	if moveError := os.Rename(oldJsonlPath, newJsonlPath); moveError != nil {
+		return moveError
+	}
+
+	if updateError := updateJsonlCwd(newJsonlPath, newPath); updateError != nil {
+		_ = os.Rename(newJsonlPath, oldJsonlPath)
+
+		return updateError
+	}
+
+	oldIndexPath := filepath.Join(oldProjectDirectory, "sessions-index.json")
+
+	_ = removeFromIndex(oldProjectDirectory, session.SessionID)
+
+	newIndexPath := filepath.Join(newProjectDirectory, "sessions-index.json")
+
+	session.FullPath = newJsonlPath
+	session.ProjectPath = newPath
+
+	_ = addToIndexWithPath(newIndexPath, session, newPath)
+
+	if isEmpty, _ := isDirectoryEmpty(oldProjectDirectory); isEmpty {
+		_ = os.Remove(oldIndexPath)
+		_ = os.Remove(oldProjectDirectory)
+	}
+
+	return nil
+}
+
+func ReassignProjectPath(oldPath, newPath string) (int, error) {
+	var updatedCount int
+
+	projectsDirectory := ProjectsDir()
+	directoryEntries, readError := os.ReadDir(projectsDirectory)
+
+	if readError != nil {
+		return 0, readError
+	}
+
+	for _, directoryEntry := range directoryEntries {
+		if !directoryEntry.IsDir() {
+			continue
+		}
+
+		projectDirectory := filepath.Join(projectsDirectory, directoryEntry.Name())
+		count, updateError := reassignInProject(projectDirectory, oldPath, newPath, false)
+
+		if updateError != nil {
+			return updatedCount, updateError
+		}
+
+		updatedCount += count
+	}
+
+	trashDirectory := TrashDir()
+
+	if _, statError := os.Stat(trashDirectory); statError == nil {
+		trashEntries, readError := os.ReadDir(trashDirectory)
+
+		if readError == nil {
+			for _, directoryEntry := range trashEntries {
+				if !directoryEntry.IsDir() {
+					continue
+				}
+
+				projectDirectory := filepath.Join(trashDirectory, directoryEntry.Name())
+				count, updateError := reassignInProject(projectDirectory, oldPath, newPath, true)
+
+				if updateError != nil {
+					return updatedCount, updateError
+				}
+
+				updatedCount += count
+			}
+		}
+	}
+
+	return updatedCount, nil
+}
+
+func reassignInProject(projectDirectory, oldPath, newPath string, inTrash bool) (int, error) {
+	indexPath := filepath.Join(projectDirectory, "sessions-index.json")
+	fileData, readError := os.ReadFile(indexPath)
+
+	if readError != nil {
+		if os.IsNotExist(readError) {
+			return reassignOrphanedSessions(projectDirectory, oldPath, newPath, inTrash)
+		}
+
+		return 0, nil
+	}
+
+	var sessionIndex SessionIndex
+
+	if unmarshalError := json.Unmarshal(fileData, &sessionIndex); unmarshalError != nil {
+		return 0, nil
+	}
+
+	if sessionIndex.OriginalPath != oldPath {
+		hasMatchingSessions := false
+
+		for _, entry := range sessionIndex.Entries {
+			if entry.ProjectPath == oldPath {
+				hasMatchingSessions = true
+
+				break
+			}
+		}
+
+		if !hasMatchingSessions {
+			return 0, nil
+		}
+	}
+
+	var updatedCount int
+
+	for _, entry := range sessionIndex.Entries {
+		if entry.ProjectPath == oldPath {
+			entry.InTrash = inTrash
+
+			if reassignError := ReassignSessionPath(&entry, newPath); reassignError != nil {
+				continue
+			}
+
+			updatedCount += 1
+		}
+	}
+
+	if isEmpty, _ := isDirectoryEmpty(projectDirectory); isEmpty {
+		_ = os.Remove(indexPath)
+		_ = os.Remove(projectDirectory)
+	}
+
+	return updatedCount, nil
+}
+
+func reassignOrphanedSessions(projectDirectory, oldPath, newPath string, inTrash bool) (int, error) {
+	entries, readError := os.ReadDir(projectDirectory)
+
+	if readError != nil {
+		return 0, nil
+	}
+
+	var updatedCount int
+
+	projectName := deriveProjectName(filepath.Base(projectDirectory))
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".jsonl") {
+			continue
+		}
+
+		fullPath := filepath.Join(projectDirectory, entry.Name())
+		currentPath := getJsonlProjectPath(fullPath)
+
+		if currentPath != oldPath {
+			continue
+		}
+
+		session := parseSessionFromJsonl(fullPath, projectName, inTrash)
+
+		if session == nil {
+			continue
+		}
+
+		if reassignError := ReassignSessionPath(session, newPath); reassignError != nil {
+			continue
+		}
+
+		updatedCount += 1
+	}
+
+	if isEmpty, _ := isDirectoryEmpty(projectDirectory); isEmpty {
+		_ = os.Remove(projectDirectory)
+	}
+
+	return updatedCount, nil
+}
+
+func getJsonlProjectPath(filePath string) string {
+	file, openError := os.Open(filePath)
+
+	if openError != nil {
+		return ""
+	}
+
+	defer func() { _ = file.Close() }()
+
+	scanner := bufio.NewScanner(file)
+	scanBuffer := make([]byte, 0, 64*1024)
+
+	scanner.Buffer(scanBuffer, 10*1024*1024)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "" {
+			continue
+		}
+
+		var lineData struct {
+			Type string `json:"type"`
+			Cwd  string `json:"cwd"`
+		}
+
+		if unmarshalError := json.Unmarshal([]byte(line), &lineData); unmarshalError != nil {
+			continue
+		}
+
+		if lineData.Type == "user" && lineData.Cwd != "" {
+			return lineData.Cwd
+		}
+	}
+
+	return ""
+}
+
+func updateJsonlProjectPath(filePath, newPath string) error {
+	fileData, readError := os.ReadFile(filePath)
+
+	if readError != nil {
+		return readError
+	}
+
+	lines := strings.Split(string(fileData), "\n")
+	var updatedLines []string
+
+	for _, line := range lines {
+		if line == "" {
+			updatedLines = append(updatedLines, line)
+
+			continue
+		}
+
+		var lineData map[string]any
+
+		if unmarshalError := json.Unmarshal([]byte(line), &lineData); unmarshalError != nil {
+			updatedLines = append(updatedLines, line)
+
+			continue
+		}
+
+		if _, hasCwd := lineData["cwd"]; hasCwd {
+			lineData["cwd"] = newPath
+		}
+
+		updatedLine, marshalError := json.Marshal(lineData)
+
+		if marshalError != nil {
+			updatedLines = append(updatedLines, line)
+
+			continue
+		}
+
+		updatedLines = append(updatedLines, string(updatedLine))
+	}
+
+	tempPath := filePath + ".tmp"
+
+	if writeError := os.WriteFile(tempPath, []byte(strings.Join(updatedLines, "\n")), 0o644); writeError != nil {
+		return writeError
+	}
+
+	return os.Rename(tempPath, filePath)
+}
+
+func pathToDirectoryName(projectPath string) string {
+	return strings.ReplaceAll(projectPath, "/", "-")
+}
+
+func updateJsonlCwd(filePath, newPath string) error {
+	return updateJsonlProjectPath(filePath, newPath)
+}
+
+func addToIndexWithPath(indexPath string, session *Session, originalPath string) error {
+	var sessionIndex SessionIndex
+
+	fileData, readError := os.ReadFile(indexPath)
+
+	if readError != nil {
+		if os.IsNotExist(readError) {
+			sessionIndex = SessionIndex{
+				Version:      1,
+				Entries:      []Session{},
+				OriginalPath: originalPath,
+			}
+		} else {
+			return readError
+		}
+	} else {
+		if unmarshalError := json.Unmarshal(fileData, &sessionIndex); unmarshalError != nil {
+			return unmarshalError
+		}
+	}
+
+	for _, entry := range sessionIndex.Entries {
+		if entry.SessionID == session.SessionID {
+			return nil
+		}
+	}
+
+	sessionIndex.Entries = append(sessionIndex.Entries, *session)
+
+	return writeIndex(indexPath, &sessionIndex)
+}
+
+func isDirectoryEmpty(path string) (bool, error) {
+	entries, readError := os.ReadDir(path)
+
+	if readError != nil {
+		return false, readError
+	}
+
+	return len(entries) == 0, nil
+}

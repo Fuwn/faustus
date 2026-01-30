@@ -3,29 +3,31 @@ package ui
 import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
-	Up         key.Binding
-	Down       key.Binding
-	Left       key.Binding
-	Right      key.Binding
-	Enter      key.Binding
-	Delete     key.Binding
-	Restore    key.Binding
-	Rename     key.Binding
-	Search     key.Binding
-	DeepSearch key.Binding
-	NextMatch  key.Binding
-	PrevMatch  key.Binding
-	Tab        key.Binding
-	Clear      key.Binding
-	Quit       key.Binding
-	Help       key.Binding
-	Escape     key.Binding
-	Confirm    key.Binding
-	HalfUp     key.Binding
-	HalfDown   key.Binding
-	Top        key.Binding
-	Bottom     key.Binding
-	Preview    key.Binding
+	Up          key.Binding
+	Down        key.Binding
+	Left        key.Binding
+	Right       key.Binding
+	Enter       key.Binding
+	Delete      key.Binding
+	Restore     key.Binding
+	Rename      key.Binding
+	Reassign    key.Binding
+	ReassignAll key.Binding
+	Search      key.Binding
+	DeepSearch  key.Binding
+	NextMatch   key.Binding
+	PrevMatch   key.Binding
+	Tab         key.Binding
+	Clear       key.Binding
+	Quit        key.Binding
+	Help        key.Binding
+	Escape      key.Binding
+	Confirm     key.Binding
+	HalfUp      key.Binding
+	HalfDown    key.Binding
+	Top         key.Binding
+	Bottom      key.Binding
+	Preview     key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -77,6 +79,14 @@ func DefaultKeyMap() KeyMap {
 		Rename: key.NewBinding(
 			key.WithKeys("c"),
 			key.WithHelp("c", "rename"),
+		),
+		Reassign: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "reassign folder"),
+		),
+		ReassignAll: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "reassign all"),
 		),
 		Search: key.NewBinding(
 			key.WithKeys("/"),

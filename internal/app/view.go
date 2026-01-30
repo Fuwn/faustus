@@ -46,6 +46,11 @@ func (m Model) View() string {
 		builder.WriteString("\n")
 	}
 
+	if m.mode == ModeReassign {
+		builder.WriteString(m.renderReassign())
+		builder.WriteString("\n")
+	}
+
 	if m.mode == ModeConfirm {
 		builder.WriteString(m.renderConfirm())
 		builder.WriteString("\n\n")
@@ -345,6 +350,16 @@ func (m Model) renderRename() string {
 	return ui.SearchInputStyle.Render("✏️  " + m.renameInput.View())
 }
 
+func (m Model) renderReassign() string {
+	label := "📁 Reassign folder"
+
+	if m.reassignAll {
+		label = "📁 Reassign ALL sessions with this folder"
+	}
+
+	return ui.SearchInputStyle.Render(label + ": " + m.reassignInput.View())
+}
+
 func (m Model) renderConfirm() string {
 	var confirmMessage string
 
@@ -471,6 +486,8 @@ func (m Model) renderHelp() string {
 		{"d", "Move to Bin"},
 		{"u", "Restore from Bin"},
 		{"c", "Rename session"},
+		{"r", "Reassign folder"},
+		{"R", "Reassign all with folder"},
 		{"D", "Empty Bin"},
 		{"?", "Show help"},
 		{"q", "Quit"},
