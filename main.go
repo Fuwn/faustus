@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/Fuwn/faustus/internal/app"
 	"github.com/Fuwn/faustus/internal/claude"
 	tea "github.com/charmbracelet/bubbletea"
+	"os"
 )
 
 func main() {
 	sessions, err := claude.LoadAllSessions()
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading sessions: %v\n", err)
 		os.Exit(1)

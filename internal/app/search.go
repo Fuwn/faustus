@@ -1,9 +1,8 @@
 package app
 
 import (
-	"strings"
-
 	"github.com/Fuwn/faustus/internal/claude"
+	"strings"
 )
 
 func (m *Model) jumpToSearchResult() {

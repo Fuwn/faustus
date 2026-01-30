@@ -1,10 +1,9 @@
 package app
 
 import (
+	"github.com/Fuwn/faustus/internal/claude"
 	"strings"
 	"time"
-
-	"github.com/Fuwn/faustus/internal/claude"
 )
 
 func (m *Model) updateFiltered() {

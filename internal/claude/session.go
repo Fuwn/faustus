@@ -21,9 +21,8 @@ type Session struct {
 	GitBranch    string    `json:"gitBranch"`
 	ProjectPath  string    `json:"projectPath"`
 	IsSidechain  bool      `json:"isSidechain"`
-
-	ProjectName string `json:"-"`
-	InTrash     bool   `json:"-"`
+	ProjectName  string    `json:"-"`
+	InTrash      bool      `json:"-"`
 }
 
 type SessionIndex struct {
@@ -333,7 +332,6 @@ func MoveToTrash(session *Session) error {
 
 	if _, statError := os.Stat(sourceAssociatedDirectory); statError == nil {
 		destinationAssociatedDirectory := filepath.Join(destinationProjectDirectory, session.SessionID)
-
 		_ = os.Rename(sourceAssociatedDirectory, destinationAssociatedDirectory)
 	}
 
@@ -371,7 +369,6 @@ func RestoreFromTrash(session *Session) error {
 
 	if _, statError := os.Stat(sourceAssociatedDirectory); statError == nil {
 		destinationAssociatedDirectory := filepath.Join(destinationProjectDirectory, session.SessionID)
-
 		_ = os.Rename(sourceAssociatedDirectory, destinationAssociatedDirectory)
 	}
 
@@ -393,7 +390,6 @@ func PermanentlyDelete(session *Session) error {
 	}
 
 	associatedDirectory := filepath.Join(projectDirectory, session.SessionID)
-
 	_ = os.RemoveAll(associatedDirectory)
 
 	return removeFromIndex(projectDirectory, session.SessionID)
@@ -555,14 +551,10 @@ func ReassignSessionPath(session *Session, newPath string) error {
 	}
 
 	oldIndexPath := filepath.Join(oldProjectDirectory, "sessions-index.json")
-
 	_ = removeFromIndex(oldProjectDirectory, session.SessionID)
-
 	newIndexPath := filepath.Join(newProjectDirectory, "sessions-index.json")
-
 	session.FullPath = newJsonlPath
 	session.ProjectPath = newPath
-
 	_ = addToIndexWithPath(newIndexPath, session, newPath)
 
 	if isEmpty, _ := isDirectoryEmpty(oldProjectDirectory); isEmpty {
@@ -769,6 +761,7 @@ func updateJsonlProjectPath(filePath, newPath string) error {
 	}
 
 	lines := strings.Split(string(fileData), "\n")
+
 	var updatedLines []string
 
 	for _, line := range lines {
