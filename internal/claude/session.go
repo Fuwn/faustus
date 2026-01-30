@@ -1,6 +1,7 @@
 package claude
 
 import (
+	"bufio"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -69,7 +70,7 @@ func LoadAllSessions() ([]Session, error) {
 		sessions, loadError := loadSessionsFromIndex(indexPath, directoryEntry.Name(), false)
 
 		if loadError != nil {
-			continue
+			sessions = loadSessionsFromJsonlFiles(projectDirectory, directoryEntry.Name(), false)
 		}
 
 		allSessions = append(allSessions, sessions...)
@@ -91,7 +92,7 @@ func LoadAllSessions() ([]Session, error) {
 				sessions, loadError := loadSessionsFromIndex(indexPath, directoryEntry.Name(), true)
 
 				if loadError != nil {
-					continue
+					sessions = loadSessionsFromJsonlFiles(projectDirectory, directoryEntry.Name(), true)
 				}
 
 				allSessions = append(allSessions, sessions...)
@@ -132,6 +133,154 @@ func loadSessionsFromIndex(indexPath, projectDirectoryName string, inTrash bool)
 	}
 
 	return sessionIndex.Entries, nil
+}
+
+type jsonlFirstLine struct {
+	SessionID  string    `json:"sessionId"`
+	Cwd        string    `json:"cwd"`
+	GitBranch  string    `json:"gitBranch"`
+	Timestamp  time.Time `json:"timestamp"`
+	IsSidechain bool     `json:"isSidechain"`
+	Message    struct {
+		Role    string `json:"role"`
+		Content any    `json:"content"`
+	} `json:"message"`
+}
+
+func loadSessionsFromJsonlFiles(projectDirectory, projectDirectoryName string, inTrash bool) []Session {
+	var sessions []Session
+
+	entries, readError := os.ReadDir(projectDirectory)
+
+	if readError != nil {
+		return sessions
+	}
+
+	projectName := deriveProjectName(projectDirectoryName)
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".jsonl") {
+			continue
+		}
+
+		fullPath := filepath.Join(projectDirectory, entry.Name())
+		session := parseSessionFromJsonl(fullPath, projectName, inTrash)
+
+		if session != nil {
+			sessions = append(sessions, *session)
+		}
+	}
+
+	return sessions
+}
+
+func parseSessionFromJsonl(filePath, projectName string, inTrash bool) *Session {
+	file, openError := os.Open(filePath)
+
+	if openError != nil {
+		return nil
+	}
+
+	defer func() { _ = file.Close() }()
+
+	fileInfo, statError := file.Stat()
+
+	if statError != nil {
+		return nil
+	}
+
+	scanner := bufio.NewScanner(file)
+	scanBuffer := make([]byte, 0, 64*1024)
+
+	scanner.Buffer(scanBuffer, 10*1024*1024)
+
+	var firstLine jsonlFirstLine
+	var firstUserContent string
+	var messageCount int
+	var created time.Time
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "" {
+			continue
+		}
+
+		var raw struct {
+			Type      string    `json:"type"`
+			Timestamp time.Time `json:"timestamp"`
+		}
+
+		if unmarshalError := json.Unmarshal([]byte(line), &raw); unmarshalError != nil {
+			continue
+		}
+
+		if raw.Type == "user" || raw.Type == "assistant" {
+			messageCount += 1
+		}
+
+		if raw.Type == "user" && firstUserContent == "" {
+			var userLine jsonlFirstLine
+
+			if unmarshalError := json.Unmarshal([]byte(line), &userLine); unmarshalError == nil {
+				if created.IsZero() {
+					created = userLine.Timestamp
+				}
+
+				if firstLine.SessionID == "" {
+					firstLine = userLine
+				}
+
+				switch content := userLine.Message.Content.(type) {
+				case string:
+					if !userLine.IsSidechain {
+						firstUserContent = content
+					}
+				case []any:
+					for _, block := range content {
+						if blockMap, ok := block.(map[string]any); ok {
+							if text, ok := blockMap["text"].(string); ok {
+								if !userLine.IsSidechain {
+									firstUserContent = text
+
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if firstLine.SessionID == "" {
+		return nil
+	}
+
+	sessionID := strings.TrimSuffix(filepath.Base(filePath), ".jsonl")
+
+	return &Session{
+		SessionID:    sessionID,
+		FullPath:     filePath,
+		FirstPrompt:  truncateString(firstUserContent, 200),
+		Summary:      "",
+		MessageCount: messageCount,
+		Created:      created,
+		Modified:     fileInfo.ModTime(),
+		GitBranch:    firstLine.GitBranch,
+		ProjectPath:  firstLine.Cwd,
+		IsSidechain:  firstLine.IsSidechain,
+		ProjectName:  projectName,
+		InTrash:      inTrash,
+	}
+}
+
+func truncateString(text string, maxLength int) string {
+	if len(text) <= maxLength {
+		return text
+	}
+
+	return text[:maxLength-1] + "…"
 }
 
 func deriveProjectName(directoryName string) string {
