@@ -72,10 +72,19 @@ func (m *Model) updateFilteredFromOriginal() {
 func (m *Model) reloadSessions() {
 	sessions, loadError := claude.LoadAllSessions()
 
-	if loadError == nil {
-		m.sessions = sessions
+	if loadError != nil {
+		m.setMessage("Reload error: " + loadError.Error())
 
-		m.updateFiltered()
+		return
+	}
+
+	m.sessions = sessions
+
+	m.updateFiltered()
+	m.invalidatePreviewCache()
+
+	if m.cursor >= len(m.filtered) {
+		m.cursor = max(0, len(m.filtered)-1)
 	}
 }
 

@@ -136,12 +136,12 @@ func loadSessionsFromIndex(indexPath, projectDirectoryName string, inTrash bool)
 }
 
 type jsonlFirstLine struct {
-	SessionID  string    `json:"sessionId"`
-	Cwd        string    `json:"cwd"`
-	GitBranch  string    `json:"gitBranch"`
-	Timestamp  time.Time `json:"timestamp"`
-	IsSidechain bool     `json:"isSidechain"`
-	Message    struct {
+	SessionID   string    `json:"sessionId"`
+	Cwd         string    `json:"cwd"`
+	GitBranch   string    `json:"gitBranch"`
+	Timestamp   time.Time `json:"timestamp"`
+	IsSidechain bool      `json:"isSidechain"`
+	Message     struct {
 		Role    string `json:"role"`
 		Content any    `json:"content"`
 	} `json:"message"`
@@ -355,6 +355,11 @@ func RestoreFromTrash(session *Session) error {
 	sourceProjectDirectory := ProjectDir(session)
 	projectDirectoryName := filepath.Base(sourceProjectDirectory)
 	destinationProjectDirectory := filepath.Join(ProjectsDir(), projectDirectoryName)
+
+	if mkdirError := os.MkdirAll(destinationProjectDirectory, 0o755); mkdirError != nil {
+		return mkdirError
+	}
+
 	sourceFile := session.FullPath
 	destinationFile := filepath.Join(destinationProjectDirectory, session.SessionID+".jsonl")
 
@@ -435,6 +440,10 @@ func removeFromIndex(projectDirectory, sessionID string) error {
 	fileData, readError := os.ReadFile(indexPath)
 
 	if readError != nil {
+		if os.IsNotExist(readError) {
+			return nil
+		}
+
 		return readError
 	}
 
