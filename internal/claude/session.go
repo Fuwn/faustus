@@ -69,7 +69,7 @@ func LoadAllSessions() ([]Session, error) {
 		indexPath := filepath.Join(projectDirectory, "sessions-index.json")
 		sessions, loadError := loadSessionsFromIndex(indexPath, directoryEntry.Name(), false)
 
-		if loadError != nil {
+		if loadError != nil || len(sessions) == 0 {
 			sessions = loadSessionsFromJsonlFiles(projectDirectory, directoryEntry.Name(), false)
 		}
 
@@ -91,7 +91,7 @@ func LoadAllSessions() ([]Session, error) {
 				indexPath := filepath.Join(projectDirectory, "sessions-index.json")
 				sessions, loadError := loadSessionsFromIndex(indexPath, directoryEntry.Name(), true)
 
-				if loadError != nil {
+				if loadError != nil || len(sessions) == 0 {
 					sessions = loadSessionsFromJsonlFiles(projectDirectory, directoryEntry.Name(), true)
 				}
 
@@ -453,7 +453,11 @@ func removeFromIndex(projectDirectory, sessionID string) error {
 		return unmarshalError
 	}
 
-	filteredEntries := make([]Session, 0, len(sessionIndex.Entries)-1)
+	if len(sessionIndex.Entries) == 0 {
+		return nil
+	}
+
+	filteredEntries := make([]Session, 0, len(sessionIndex.Entries))
 
 	for _, entry := range sessionIndex.Entries {
 		if entry.SessionID != sessionID {
