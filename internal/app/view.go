@@ -2,12 +2,11 @@ package app
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/Fuwn/faustus/internal/claude"
 	"github.com/Fuwn/faustus/internal/ui"
 	"github.com/charmbracelet/lipgloss"
+	"strings"
+	"time"
 )
 
 func (m Model) View() string {
@@ -168,7 +167,6 @@ func (m Model) renderSessionCompact(session *claude.Session, isSelected bool, ma
 	}
 
 	maxSummary := maxWidth - 4
-
 	summary = truncate(summary, maxSummary)
 
 	if isSelected {
@@ -194,12 +192,9 @@ func (m Model) renderPreview(width, height int) string {
 	if m.cursor < len(m.filtered) {
 		session := &m.filtered[m.cursor]
 		header := ui.PreviewHeaderStyle.Render(truncate(session.Summary, width-4))
-
 		lines = append(lines, header)
-
 		meta := ui.MetaStyle.Render(fmt.Sprintf("%s • %s • %d messages",
 			session.ProjectName, formatTime(session.Modified), len(preview.Messages)))
-
 		lines = append(lines, meta)
 		lines = append(lines, ui.PreviewDividerStyle.Render(strings.Repeat("─", width-4)))
 		lines = append(lines, "")
@@ -252,7 +247,6 @@ func (m Model) renderPreview(width, height int) string {
 		}
 
 		lines = append(lines, roleStyle.Render(prefix+":")+matchIndicator)
-
 		content := previewMessage.Content
 
 		if m.previewSearchQuery != "" && isMatch {

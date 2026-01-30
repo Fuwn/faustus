@@ -74,7 +74,6 @@ func LoadSessionPreview(session *Session, maxMessages int) PreviewContent {
 		}
 
 		parsedMessages := parseRawMessage(rawMessage)
-
 		messages = append(messages, parsedMessages...)
 	}
 
@@ -109,7 +108,6 @@ func parseRawMessage(rawMessage RawMessage) []PreviewMessage {
 		if content != "" {
 			result = append(result, PreviewMessage{Role: "user", Content: content})
 		}
-
 	case "assistant":
 		var assistantMessage AssistantMessage
 
@@ -129,7 +127,6 @@ func parseRawMessage(rawMessage RawMessage) []PreviewMessage {
 				if text != "" {
 					result = append(result, PreviewMessage{Role: "assistant", Content: text})
 				}
-
 			case "tool_use":
 				toolInfo := contentBlock.Name
 
@@ -150,7 +147,6 @@ func parseRawMessage(rawMessage RawMessage) []PreviewMessage {
 						} else if filePath, exists := inputMap["file_path"]; exists {
 							if filePathString, isString := filePath.(string); isString {
 								pathParts := strings.Split(filePathString, "/")
-
 								toolInfo += ": " + pathParts[len(pathParts)-1]
 							}
 						}
@@ -158,7 +154,6 @@ func parseRawMessage(rawMessage RawMessage) []PreviewMessage {
 
 					result = append(result, PreviewMessage{Role: "tool", Content: toolInfo})
 				}
-
 			case "thinking":
 				thinking := contentBlock.Thinking
 

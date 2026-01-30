@@ -27,7 +27,6 @@ func SearchAllSessions(sessions []Session, query string) []SearchResult {
 	for sessionIndex := range sessions {
 		session := &sessions[sessionIndex]
 		matches := searchSession(session, query)
-
 		results = append(results, matches...)
 	}
 
@@ -66,7 +65,6 @@ func searchSession(session *Session, query string) []SearchResult {
 		}
 
 		matches := searchRawMessage(session, &rawMessage, query, messageIndex)
-
 		results = append(results, matches...)
 
 		if rawMessage.Type == "user" || rawMessage.Type == "assistant" {
@@ -92,7 +90,6 @@ func searchRawMessage(session *Session, rawMessage *RawMessage, query string, me
 
 		if matchPosition := strings.Index(contentLowercase, query); matchPosition != -1 {
 			content := matchContext(userMessage.Content, matchPosition, len(query))
-
 			results = append(results, SearchResult{
 				Session:       session,
 				MessageIndex:  messageIndex,
@@ -101,7 +98,6 @@ func searchRawMessage(session *Session, rawMessage *RawMessage, query string, me
 				MatchPosition: matchPosition,
 			})
 		}
-
 	case "assistant":
 		var assistantMessage AssistantMessage
 
@@ -115,7 +111,6 @@ func searchRawMessage(session *Session, rawMessage *RawMessage, query string, me
 
 				if matchPosition := strings.Index(textLowercase, query); matchPosition != -1 {
 					content := matchContext(contentBlock.Text, matchPosition, len(query))
-
 					results = append(results, SearchResult{
 						Session:       session,
 						MessageIndex:  messageIndex,

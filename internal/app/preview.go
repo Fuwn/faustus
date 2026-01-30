@@ -1,9 +1,8 @@
 package app
 
 import (
-	"strings"
-
 	"github.com/Fuwn/faustus/internal/claude"
+	"strings"
 )
 
 func (m *Model) invalidatePreviewCache() {
@@ -61,12 +60,9 @@ func (m *Model) calculatePreviewMetrics() previewMetrics {
 
 	for _, previewMessage := range preview.Messages {
 		metrics.messageLines = append(metrics.messageLines, lineCount)
-
 		lineCount += 1
-
 		wrapped := wrapText(previewMessage.Content, width)
 		contentLines := strings.Count(wrapped, "\n") + 1
-
 		lineCount += contentLines
 		lineCount += 1
 	}

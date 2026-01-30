@@ -1,12 +1,11 @@
 package app
 
 import (
-	"time"
-
 	"github.com/Fuwn/faustus/internal/claude"
 	"github.com/Fuwn/faustus/internal/ui"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"time"
 )
 
 type Tab int
@@ -71,29 +70,21 @@ type Model struct {
 
 func NewModel(sessions []claude.Session) Model {
 	searchInput := textinput.New()
-
 	searchInput.Placeholder = "Filter sessions"
 	searchInput.CharLimit = 100
 	searchInput.Width = 40
-
 	renameInput := textinput.New()
-
 	renameInput.Placeholder = "Enter new name"
 	renameInput.CharLimit = 200
 	renameInput.Width = 60
-
 	deepSearchInput := textinput.New()
-
 	deepSearchInput.Placeholder = "Search all sessions"
 	deepSearchInput.CharLimit = 100
 	deepSearchInput.Width = 50
-
 	reassignInput := textinput.New()
-
 	reassignInput.Placeholder = "Enter new project path"
 	reassignInput.CharLimit = 500
 	reassignInput.Width = 80
-
 	model := Model{
 		sessions:        sessions,
 		keys:            ui.DefaultKeyMap(),

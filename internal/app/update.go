@@ -2,12 +2,11 @@ package app
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/Fuwn/faustus/internal/claude"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"time"
 )
 
 func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -17,7 +16,6 @@ func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = typedMessage.Height
 
 		return m, nil
-
 	case tea.KeyMsg:
 		if time.Since(m.messageTime) > 3*time.Second {
 			m.message = ""
@@ -46,17 +44,14 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(keyMessage, m.keys.Quit):
 		return m, tea.Quit
-
 	case key.Matches(keyMessage, m.keys.Help):
 		m.showHelp = !m.showHelp
-
 	case key.Matches(keyMessage, m.keys.Preview):
 		m.showPreview = !m.showPreview
 		m.previewFocus = false
 		m.previewScroll = 0
 
 		m.invalidatePreviewCache()
-
 	case key.Matches(keyMessage, m.keys.Up):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll -= 1
@@ -68,7 +63,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Down):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll += 1
@@ -80,7 +74,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.HalfUp):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll -= 10
@@ -92,7 +85,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.HalfDown):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll += 10
@@ -104,7 +96,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Top):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll = 0
@@ -114,7 +105,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Bottom):
 		if m.showPreview && m.previewFocus {
 			m.previewScroll = 99999
@@ -126,7 +116,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Tab):
 		if m.showPreview {
 			m.previewFocus = !m.previewFocus
@@ -143,7 +132,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateFiltered()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Left):
 		if m.tab != TabSessions {
 			m.tab = TabSessions
@@ -153,7 +141,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateFiltered()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Right):
 		if m.tab != TabTrash {
 			m.tab = TabTrash
@@ -163,14 +150,12 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateFiltered()
 			m.invalidatePreviewCache()
 		}
-
 	case key.Matches(keyMessage, m.keys.Search):
 		m.mode = ModeSearch
 
 		m.searchInput.Focus()
 
 		return m, textinput.Blink
-
 	case key.Matches(keyMessage, m.keys.Delete):
 		if len(m.filtered) > 0 {
 			if m.tab == TabTrash {
@@ -181,13 +166,11 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			m.mode = ModeConfirm
 		}
-
 	case key.Matches(keyMessage, m.keys.Restore):
 		if len(m.filtered) > 0 && m.tab == TabTrash {
 			m.confirmAction = ConfirmRestore
 			m.mode = ModeConfirm
 		}
-
 	case key.Matches(keyMessage, m.keys.Rename):
 		if len(m.filtered) > 0 {
 			session := &m.filtered[m.cursor]
@@ -199,7 +182,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			return m, textinput.Blink
 		}
-
 	case key.Matches(keyMessage, m.keys.Reassign):
 		if len(m.filtered) > 0 {
 			session := &m.filtered[m.cursor]
@@ -212,7 +194,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			return m, textinput.Blink
 		}
-
 	case key.Matches(keyMessage, m.keys.ReassignAll):
 		if len(m.filtered) > 0 {
 			session := &m.filtered[m.cursor]
@@ -225,13 +206,11 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			return m, textinput.Blink
 		}
-
 	case key.Matches(keyMessage, m.keys.Clear):
 		if m.tab == TabTrash {
 			m.confirmAction = ConfirmEmptyTrash
 			m.mode = ModeConfirm
 		}
-
 	case key.Matches(keyMessage, m.keys.DeepSearch):
 		m.mode = ModeDeepSearch
 
@@ -239,7 +218,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.deepSearchInput.Focus()
 
 		return m, textinput.Blink
-
 	case key.Matches(keyMessage, m.keys.NextMatch):
 		if m.showPreview && m.previewFocus && len(m.previewSearchMatches) > 0 {
 			m.previewSearchIndex = (m.previewSearchIndex + 1) % len(m.previewSearchMatches)
@@ -250,7 +228,6 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			m.jumpToSearchResult()
 		}
-
 	case key.Matches(keyMessage, m.keys.PrevMatch):
 		if m.showPreview && m.previewFocus && len(m.previewSearchMatches) > 0 {
 			m.previewSearchIndex -= 1
@@ -287,7 +264,6 @@ func (m Model) handleSearchMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.previewSearchMatches = nil
 
 		return m, nil
-
 	case key.Matches(keyMessage, m.keys.Enter):
 		m.mode = ModeNormal
 
@@ -336,7 +312,6 @@ func (m Model) handleDeepSearchMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) 
 		m.deepSearchInput.Blur()
 
 		return m, nil
-
 	case key.Matches(keyMessage, m.keys.Enter):
 		query := m.deepSearchInput.Value()
 
@@ -375,7 +350,6 @@ func (m Model) handleRenameMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.renameInput.Blur()
 
 		return m, nil
-
 	case key.Matches(keyMessage, m.keys.Enter):
 		if len(m.filtered) > 0 {
 			newName := m.renameInput.Value()
@@ -418,7 +392,6 @@ func (m Model) handleReassignMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.reassignInput.Blur()
 
 		return m, nil
-
 	case key.Matches(keyMessage, m.keys.Enter):
 		if len(m.filtered) > 0 {
 			newPath := m.reassignInput.Value()
@@ -471,7 +444,6 @@ func (m Model) handleConfirmMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.confirmAction = ConfirmNone
 
 		return m, nil
-
 	case key.Matches(keyMessage, m.keys.Confirm):
 		return m.executeConfirmedAction()
 	}
@@ -489,7 +461,6 @@ func (m Model) executeConfirmedAction() (tea.Model, tea.Cmd) {
 				m.reloadSessions()
 			}
 		}
-
 	case ConfirmRestore:
 		if session := m.selectedSession(); session != nil {
 			if restoreError := claude.RestoreFromTrash(session); restoreError != nil {
@@ -499,7 +470,6 @@ func (m Model) executeConfirmedAction() (tea.Model, tea.Cmd) {
 				m.reloadSessions()
 			}
 		}
-
 	case ConfirmPermanentDelete:
 		if session := m.selectedSession(); session != nil {
 			if deleteError := claude.PermanentlyDelete(session); deleteError != nil {
@@ -509,7 +479,6 @@ func (m Model) executeConfirmedAction() (tea.Model, tea.Cmd) {
 				m.reloadSessions()
 			}
 		}
-
 	case ConfirmEmptyTrash:
 		if emptyError := claude.EmptyTrash(); emptyError != nil {
 			m.setMessage(fmt.Sprintf("Error: %v", emptyError))
