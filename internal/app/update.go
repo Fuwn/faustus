@@ -404,7 +404,6 @@ func (m Model) executeConfirmedAction() (tea.Model, tea.Cmd) {
 			if deleteError := claude.MoveToTrash(session); deleteError != nil {
 				m.setMessage(fmt.Sprintf("Error: %v", deleteError))
 			} else {
-				m.setMessage("Moved to Bin")
 				m.reloadSessions()
 			}
 		}
