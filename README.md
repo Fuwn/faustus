@@ -13,6 +13,7 @@
 - **Delete**: Move sessions to bin (recoverable)
 - **Restore**: Recover sessions from bin
 - **Rename**: Update session summaries
+- **Reassign Folder**: Move sessions when project folders are relocated
 - **Bin Management**: Empty bin to permanently delete sessions
 
 ## Installation
@@ -54,6 +55,8 @@ Vim-style navigation:
 | `d` | Delete (move to bin) |
 | `u` | Restore from bin |
 | `c` | Change name (rename) |
+| `r` | Reassign folder (single session) |
+| `R` | Reassign folder (all matching sessions) |
 | `D` | Clear bin |
 | `?` | Toggle help |
 | `q` | Quit |

@@ -32,6 +32,8 @@ func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleRenameMode(typedMessage)
 		case ModeConfirm:
 			return m.handleConfirmMode(typedMessage)
+		case ModeReassign:
+			return m.handleReassignMode(typedMessage)
 		default:
 			return m.handleNormalMode(typedMessage)
 		}
@@ -194,6 +196,32 @@ func (m Model) handleNormalMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.renameInput.Focus()
 
 			m.mode = ModeRename
+
+			return m, textinput.Blink
+		}
+
+	case key.Matches(keyMessage, m.keys.Reassign):
+		if len(m.filtered) > 0 {
+			session := &m.filtered[m.cursor]
+
+			m.reassignInput.SetValue(session.ProjectPath)
+			m.reassignInput.Focus()
+
+			m.reassignAll = false
+			m.mode = ModeReassign
+
+			return m, textinput.Blink
+		}
+
+	case key.Matches(keyMessage, m.keys.ReassignAll):
+		if len(m.filtered) > 0 {
+			session := &m.filtered[m.cursor]
+
+			m.reassignInput.SetValue(session.ProjectPath)
+			m.reassignInput.Focus()
+
+			m.reassignAll = true
+			m.mode = ModeReassign
 
 			return m, textinput.Blink
 		}
@@ -378,6 +406,60 @@ func (m Model) handleRenameMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var command tea.Cmd
 
 	m.renameInput, command = m.renameInput.Update(keyMessage)
+
+	return m, command
+}
+
+func (m Model) handleReassignMode(keyMessage tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(keyMessage, m.keys.Escape):
+		m.mode = ModeNormal
+
+		m.reassignInput.Blur()
+
+		return m, nil
+
+	case key.Matches(keyMessage, m.keys.Enter):
+		if len(m.filtered) > 0 {
+			newPath := m.reassignInput.Value()
+
+			if newPath != "" {
+				session := m.selectedSession()
+
+				if session != nil {
+					oldPath := session.ProjectPath
+
+					if m.reassignAll {
+						count, reassignError := claude.ReassignProjectPath(oldPath, newPath)
+
+						if reassignError != nil {
+							m.setMessage(fmt.Sprintf("Error: %v", reassignError))
+						} else {
+							m.setMessage(fmt.Sprintf("Reassigned %d sessions", count))
+							m.reloadSessions()
+						}
+					} else {
+						if reassignError := claude.ReassignSessionPath(session, newPath); reassignError != nil {
+							m.setMessage(fmt.Sprintf("Error: %v", reassignError))
+						} else {
+							m.setMessage("Reassigned")
+							m.reloadSessions()
+						}
+					}
+				}
+			}
+		}
+
+		m.mode = ModeNormal
+
+		m.reassignInput.Blur()
+
+		return m, nil
+	}
+
+	var command tea.Cmd
+
+	m.reassignInput, command = m.reassignInput.Update(keyMessage)
 
 	return m, command
 }

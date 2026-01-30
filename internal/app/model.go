@@ -24,6 +24,7 @@ const (
 	ModeDeepSearch
 	ModeRename
 	ModeConfirm
+	ModeReassign
 )
 
 type ConfirmAction int
@@ -64,6 +65,8 @@ type Model struct {
 	previewSearchQuery   string
 	previewSearchMatches []int
 	previewSearchIndex   int
+	reassignInput        textinput.Model
+	reassignAll          bool
 }
 
 func NewModel(sessions []claude.Session) Model {
@@ -85,12 +88,19 @@ func NewModel(sessions []claude.Session) Model {
 	deepSearchInput.CharLimit = 100
 	deepSearchInput.Width = 50
 
+	reassignInput := textinput.New()
+
+	reassignInput.Placeholder = "Enter new project path"
+	reassignInput.CharLimit = 500
+	reassignInput.Width = 80
+
 	model := Model{
 		sessions:        sessions,
 		keys:            ui.DefaultKeyMap(),
 		searchInput:     searchInput,
 		renameInput:     renameInput,
 		deepSearchInput: deepSearchInput,
+		reassignInput:   reassignInput,
 		showPreview:     false,
 	}
 
