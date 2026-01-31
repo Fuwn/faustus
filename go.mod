@@ -1,6 +1,6 @@
 module github.com/Fuwn/faustus
 
-go 1.24.3
+go 1.24.0
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
