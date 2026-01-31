@@ -1,0 +1,75 @@
+.TH FAUSTUS 1 "January 2026" "faustus" "User Commands"
+.SH NAME
+faustus \- TUI for managing Claude Code sessions
+.SH SYNOPSIS
+.B faustus
+.SH DESCRIPTION
+.B faustus
+is a terminal user interface for browsing, searching, and managing Claude Code conversation sessions.
+.PP
+Sessions are stored in ~/.claude/projects/. Deleted sessions are moved to ~/.claude/faustus-trash/ and can be restored.
+.SH KEYBINDINGS
+.TP
+.B j/k
+Navigate down/up (or scroll preview when focused)
+.TP
+.B h/l
+Switch tabs (Sessions / Bin)
+.TP
+.B gg/G
+Jump to top/bottom
+.TP
+.B Ctrl+u/Ctrl+d
+Half page up/down
+.TP
+.B /
+Filter session list (or search in preview when focused)
+.TP
+.B s
+Deep search across all session content
+.TP
+.B n/N
+Next/previous search match
+.TP
+.B p
+Toggle preview pane
+.TP
+.B Tab
+Switch focus between list and preview
+.TP
+.B d
+Delete (move to bin)
+.TP
+.B u
+Restore from bin
+.TP
+.B c
+Change name (rename session)
+.TP
+.B r
+Reassign folder (single session)
+.TP
+.B R
+Reassign folder (all matching sessions)
+.TP
+.B D
+Clear bin (permanent delete)
+.TP
+.B ?
+Toggle help
+.TP
+.B q
+Quit
+.SH FILES
+.TP
+.I ~/.claude/projects/
+Claude Code session storage
+.TP
+.I ~/.claude/faustus-trash/
+Deleted sessions (recoverable)
+.SH AUTHOR
+Fuwn <https://github.com/Fuwn>
+.SH SEE ALSO
+Project homepage: https://github.com/Fuwn/faustus
+.SH LICENSE
+GNU General Public License v3.0
