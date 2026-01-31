@@ -22,6 +22,12 @@
 go install github.com/Fuwn/faustus@latest
 ```
 
+Or run with Nix:
+
+```bash
+nix run github:Fuwn/faustus
+```
+
 Or build from source:
 
 ```bash
