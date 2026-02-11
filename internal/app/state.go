@@ -88,14 +88,14 @@ func (m *Model) reloadSessions() {
 }
 
 func (m *Model) ensureVisible() {
-	visibleHeight := m.listHeight()
+	visible := m.visibleItemCount()
 
 	if m.cursor < m.offset {
 		m.offset = m.cursor
 	}
 
-	if m.cursor >= m.offset+visibleHeight {
-		m.offset = m.cursor - visibleHeight + 1
+	if m.cursor >= m.offset+visible {
+		m.offset = m.cursor - visible + 1
 	}
 }
 
@@ -119,4 +119,12 @@ func (m Model) listHeight() int {
 	}
 
 	return max(1, m.height-reserved)
+}
+
+func (m Model) visibleItemCount() int {
+	if m.showPreview {
+		return m.listHeight() - 2
+	}
+
+	return max(1, m.listHeight()/2)
 }

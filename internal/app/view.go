@@ -390,9 +390,9 @@ func (m Model) renderList() string {
 
 	var builder strings.Builder
 
-	listHeight := m.listHeight()
+	visible := m.visibleItemCount()
 
-	for index := m.offset; index < min(m.offset+listHeight, len(m.filtered)); index++ {
+	for index := m.offset; index < min(m.offset+visible, len(m.filtered)); index++ {
 		session := m.filtered[index]
 		isSelected := index == m.cursor
 
@@ -400,9 +400,9 @@ func (m Model) renderList() string {
 		builder.WriteString("\n")
 	}
 
-	if len(m.filtered) > listHeight {
-		position := float64(m.offset) / float64(len(m.filtered)-listHeight)
-		indicator := fmt.Sprintf(" [%d-%d of %d]", m.offset+1, min(m.offset+listHeight, len(m.filtered)), len(m.filtered))
+	if len(m.filtered) > visible {
+		position := float64(m.offset) / float64(len(m.filtered)-visible)
+		indicator := fmt.Sprintf(" [%d-%d of %d]", m.offset+1, min(m.offset+visible, len(m.filtered)), len(m.filtered))
 
 		builder.WriteString(ui.MetaStyle.Render(indicator))
 
